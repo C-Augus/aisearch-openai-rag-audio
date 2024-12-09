@@ -10,6 +10,13 @@ export type HistoryItem = {
     groundingFiles: GroundingFile[];
 };
 
+export type InterviewItem = {
+    name?: string;
+    cpf?: string;
+    category?: string;
+    expirationDate?: string;
+}
+
 export type SessionUpdateCommand = {
     type: "session.update";
     session: {

@@ -1,15 +1,13 @@
 import { AnimatePresence, motion, Variants } from "framer-motion";
 
-import { GroundingFile as GroundingFileType } from "@/types";
+import { InterviewItem } from "@/types";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
-import GroundingFile from "./grounding-file";
 import { useRef } from "react";
 // import { useTranslation } from "react-i18next";
 
 type Properties = {
-    files: GroundingFileType[];
-    onSelected: (file: GroundingFileType) => void;
+    answers?: InterviewItem;
 };
 
 const variants: Variants = {
@@ -28,19 +26,27 @@ const variants: Variants = {
     })
 };
 
-export function GroundingFiles({ files, onSelected }: Properties) {
+const propertyNamesMap: Record<string, string> = {
+    name: "Nome",
+    cpf: "CPF",
+    category: "Categoria",
+    expirationDate: "Data de Expiração",
+};
+
+
+export function InterviewAnswers({ answers }: Properties) {
     // const { t } = useTranslation();
     const isAnimating = useRef(false);
 
-    if (files.length === 0) {
+    if (!answers) {
         return null;
     }
 
     return (
         <Card className="m-4 max-w-full md:max-w-md lg:min-w-96 lg:max-w-2xl">
             <CardHeader>
-                <CardTitle className="text-xl">Arquivos de base</CardTitle>
-                <CardDescription>Arquivos usados para embasar as respostas.</CardDescription>
+                <CardTitle className="text-xl">Dados do usuário</CardTitle>
+                <CardDescription>Dados do usuário com base na entrevista.</CardDescription>
             </CardHeader>
             <CardContent>
                 <AnimatePresence>
@@ -53,12 +59,20 @@ export function GroundingFiles({ files, onSelected }: Properties) {
                         onLayoutAnimationStart={() => (isAnimating.current = true)}
                         onLayoutAnimationComplete={() => (isAnimating.current = false)}
                     >
-                        <div className="flex flex-wrap gap-2">
-                            {files.map((file, index) => (
-                                <motion.div key={index} variants={variants} initial="hidden" animate="visible" custom={index}>
-                                    <GroundingFile key={index} value={file} onClick={() => onSelected(file)} />
-                                </motion.div>
-                            ))}
+                        <div className="flex flex-col gap-2">
+                            {Object.entries(answers)
+                                .filter(([_, value]) => value) // Exibe apenas os campos preenchidos
+                                .map(([key, value], index) => (
+                                    <motion.div
+                                        key={index}
+                                        variants={variants}
+                                        initial="hidden"
+                                        animate="visible"
+                                        custom={index}
+                                    >
+                                        <strong>{propertyNamesMap[key] || key}:</strong> {value}
+                                    </motion.div>
+                                ))}
                         </div>
                     </motion.div>
                 </AnimatePresence>
