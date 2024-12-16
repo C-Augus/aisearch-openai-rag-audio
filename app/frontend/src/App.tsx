@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState  } from "react";
 import { Mic, MicOff } from "lucide-react";
 // import { useTranslation } from "react-i18next";
 
@@ -25,20 +25,26 @@ function App() {
     const [interviewDetected, setInterviewDetected] = useState<boolean>(false);
     const [interviewAnswers, setInterviewAnswers] = useState<InterviewItem>();
     const [interviewStep, setInterviewStep] = useState<number>(0);
-    const [isValidanting, setIsValidating] = useState<boolean>(false);
+    const [isValidating, setIsValidating] = useState<boolean>(false);
+    const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
     const { startSession, addUserAudio, inputAudioBufferClear } = useRealTime({
         enableInputAudioTranscription: true,
         onReceivedInputAudioTranscriptionCompleted: message => { // Sender
-            if (interviewDetected && !isValidanting) {
+            // console.log("________________1______________");
+            // console.log("messagem do usuário: ", message.transcript);
+
+            if (interviewDetected && !isValidating) {
                switch(interviewStep) {
                     case 0:
+                        // console.log("Caso 0");
                         setInterviewAnswers({
                             ...interviewAnswers,
                             name: message.transcript?.replace(/[\n.]/g, "") || "Não obtido",
                         });
                         break;
                     case 1:
+                        // console.log("Caso 1");
                         if (interviewAnswers) {
                             setInterviewAnswers({
                                 ...interviewAnswers,
@@ -47,6 +53,7 @@ function App() {
                         };
                         break;
                     case 2:
+                        // console.log("Caso 2");
                         if (interviewAnswers) {
                             setInterviewAnswers({
                                 ...interviewAnswers,
@@ -55,16 +62,18 @@ function App() {
                         };
                         break;
                     case 3:
+                        // console.log("Caso 3");
                         if (interviewAnswers) {
                             setInterviewAnswers({
                                 ...interviewAnswers,
-                                category: message.transcript?.replace(/[\n.]/g, "") || "Não obtido",
-                            });
+                                category: message.transcript
+                                ?.replace(/categoria\s*/i, "")
+                                .replace(/[\n.]/g, "")
+                                .trim() || "Não obtido"});
                         };
                         break;
-                    case 4:
-                        setInterviewDetected(false);
-                        setInterviewAnswers({ name: "", cpf: "", expirationDate: "", category: "" });
+                    default:
+                        break;
                     }                
             }
         },
@@ -74,23 +83,60 @@ function App() {
             if (!transcript) {
                 return;
             }
-            
+
+            // console.log("________________2______________");
+
+            // console.log("messagem do assistente: ", transcript);
+
             setIsValidating(false);
 
-            if (transcript.includes("correto"))
+            if (transcript.includes("correto") || transcript.includes("correta"))
                 setIsValidating(true);
 
             if (transcript.includes("nome completo")) {
+                // console.log("Set 0");
+                setIsSuccess(false);
+                setInterviewAnswers({ name: "", cpf: "", expirationDate: "", category: "" });
                 setInterviewDetected(true);
                 setInterviewStep(0)
+                if (!interviewAnswers?.name) {
+                    setInterviewAnswers({
+                        ...interviewAnswers,
+                        name: "\"ex. João da Silva\"",
+                    });
+                }
             } else if (transcript.includes("seu CPF")) {
+                // console.log("Set 1");
                 setInterviewStep(1)
-            } else if (transcript.includes("data de expiração") || transcript.includes("data de validade")) {
+                if (!interviewAnswers?.cpf) {
+                    setInterviewAnswers({
+                        ...interviewAnswers,
+                        cpf: "\"ex. 12345678910\"",
+                    });
+                }
+            } else if (transcript.includes("data")) {
+                // console.log("Set 2");
                 setInterviewStep(2)
+                if (!interviewAnswers?.expirationDate) {
+                    setInterviewAnswers({
+                        ...interviewAnswers,
+                        expirationDate: "\"ex. 31 de dezembro de 2024\"",
+                    });
+                }
             } else if (transcript.includes("categoria")) {
+                // console.log("Set 3");
                 setInterviewStep(3)
+                if (!interviewAnswers?.category) {
+                    setInterviewAnswers({
+                        ...interviewAnswers,
+                        category: "\"ex. Categoria A\"",
+                    });
+                }
             } else if (transcript.includes("sucesso")) {
-                setInterviewStep(4);
+                // console.log("Set 4");
+                setInterviewDetected(false);
+                setIsValidating(false);
+                setIsSuccess(true);
             }     
         },
         onWebSocketOpen: () => console.log("WebSocket connection opened"),
@@ -135,12 +181,14 @@ function App() {
 
     // const { t } = useTranslation();
 
-    useEffect(() => {
-        console.log("interviewDected: ",interviewDetected);
-        console.log("interviewAnswers: ",interviewAnswers);
-        console.log("interviewStep: ",interviewStep);
-        console.log("isValidating: ",isValidanting);
-    }, [interviewDetected, interviewAnswers, interviewStep, isValidanting])
+    // useEffect(() => {
+    //     console.log("________________3______________");
+    //     console.log("interviewDected: ",interviewDetected);
+    //     console.log("interviewAnswers: ",interviewAnswers);
+    //     console.log("interviewStep: ",interviewStep);
+    //     console.log("isValidating: ",isValidating);
+    //     console.log("isSuccess: ",isSuccess);
+    // }, [interviewDetected, interviewAnswers, interviewStep, isValidating, isSuccess])
 
     return (
         <div className="flex min-h-screen flex-col bg-gray-100 text-gray-900">
@@ -149,7 +197,7 @@ function App() {
             </div>
             <main className="flex flex-grow flex-col items-center justify-center">
                 <h1 className="mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-4xl font-bold text-transparent md:text-7xl">
-                    Fale com os seus dados
+                    Autoatendimento com a IA
                 </h1>
                 <div className="mb-4 flex flex-col items-center justify-center">
                     <Button
@@ -171,7 +219,7 @@ function App() {
                     <StatusMessage isRecording={isRecording} />
                 </div>
                 <GroundingFiles files={groundingFiles} onSelected={setSelectedFile} />
-                <InterviewAnswers answers={interviewAnswers} />
+                <InterviewAnswers answers={interviewAnswers} isSuccess={isSuccess} />
             </main>
 
             <footer className="flex flex-col py-4 text-center place-items-center gap-4 text-slate-500">

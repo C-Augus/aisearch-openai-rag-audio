@@ -6,8 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./car
 import { useRef } from "react";
 // import { useTranslation } from "react-i18next";
 
+import { Check } from "lucide-react";
+
 type Properties = {
     answers?: InterviewItem;
+    isSuccess?: boolean;
 };
 
 const variants: Variants = {
@@ -34,7 +37,7 @@ const propertyNamesMap: Record<string, string> = {
 };
 
 
-export function InterviewAnswers({ answers }: Properties) {
+export function InterviewAnswers({ answers, isSuccess }: Properties) {
     // const { t } = useTranslation();
     const isAnimating = useRef(false);
 
@@ -45,8 +48,13 @@ export function InterviewAnswers({ answers }: Properties) {
     return (
         <Card className="m-4 max-w-full md:max-w-md lg:min-w-96 lg:max-w-2xl">
             <CardHeader>
-                <CardTitle className="text-xl">Dados do usuário</CardTitle>
-                <CardDescription>Dados do usuário com base na entrevista.</CardDescription>
+                <CardTitle className="flex flex-row items-center place-content-between text-xl">
+                    Dados do usuário
+                    {isSuccess && <Check className="flex h-5 text-green-500 w-5" />}
+                    </CardTitle>
+                <CardDescription>
+                  Dados do usuário com base na entrevista.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <AnimatePresence>
@@ -70,12 +78,13 @@ export function InterviewAnswers({ answers }: Properties) {
                                         animate="visible"
                                         custom={index}
                                     >
-                                        <strong>{propertyNamesMap[key] || key}:</strong> {value}
+                                        <strong>{propertyNamesMap[key] || key}:</strong> {value.includes("\"") ? (<span className="opacity-70">{value}</span>) : (value)}
                                     </motion.div>
                                 ))}
                         </div>
                     </motion.div>
                 </AnimatePresence>
+                <span className="opacity-60 text-sm text-red-700">Estes são os dados que serão de fato enviados.</span>
             </CardContent>
         </Card>
     );
